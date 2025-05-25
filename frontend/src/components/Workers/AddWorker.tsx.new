@@ -1,18 +1,16 @@
-// filepath: /Users/chinmaypatil/Documents/SuperERP/frontend/src/components/Workers/EditWorker.tsx
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 import { useState } from "react"
-import { FaEdit } from "react-icons/fa"
+import { FaPlus } from "react-icons/fa"
 
 import {
   Button,
   Input,
   Grid,
   GridItem,
-  IconButton,
 } from "@chakra-ui/react"
 
-import { type WorkerPublic, type WorkerUpdate, WorkersService } from "../../client"
+import { type WorkerCreate, WorkersService } from "../../client"
 import type { ApiError } from "../../client/core/ApiError"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
@@ -28,11 +26,7 @@ import {
 } from "../ui/dialog"
 import { Field } from "../ui/field"
 
-interface EditWorkerProps {
-  worker: WorkerPublic
-}
-
-export function EditWorker({ worker }: EditWorkerProps) {
+function AddWorker() {
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
   const [open, setOpen] = useState(false)
@@ -42,31 +36,29 @@ export function EditWorker({ worker }: EditWorkerProps) {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<WorkerUpdate>({
+  } = useForm<WorkerCreate>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      name: worker.name,
-      gender: worker.gender || "",
-      department: worker.department || "",
-      address: worker.address || "",
-      aadhar: worker.aadhar || "",
-      bankname: worker.bankname || "",
-      ifscode: worker.ifscode || "",
-      accountno: worker.accountno || "",
-      pfno: worker.pfno || "",
-      esicno: worker.esicno || "",
+      name: "",
+      gender: "",
+      department: "",
+      address: "",
+      aadhar: "",
+      bankname: "",
+      ifscode: "",
+      accountno: "",
+      pfno: "",
+      esicno: "",
     },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: WorkerUpdate) =>
-      WorkersService.updateWorker({
-        id: worker.id,
-        requestBody: data,
-      }),
+    mutationFn: (data: WorkerCreate) =>
+      WorkersService.createWorker({ requestBody: data }),
     onSuccess: () => {
-      showSuccessToast("Worker updated successfully.")
+      showSuccessToast("Worker created successfully.")
+      reset()
       setOpen(false)
     },
     onError: (err: ApiError) => {
@@ -77,29 +69,29 @@ export function EditWorker({ worker }: EditWorkerProps) {
     },
   })
 
-  const onSubmit: SubmitHandler<WorkerUpdate> = (data) => {
+  const onSubmit: SubmitHandler<WorkerCreate> = (data) => {
     mutation.mutate(data)
   }
 
   return (
     <DialogRoot open={open} onOpenChange={(e) => setOpen(e.open)}>
       <DialogTrigger asChild>
-        <IconButton
-          aria-label="Edit worker"
-          size="sm"
-          variant="ghost"
+        <Button
+          variant="solid"
           colorPalette="blue"
+          size="sm"
         >
-          <FaEdit />
-        </IconButton>
+          <FaPlus />
+          Add Worker
+        </Button>
       </DialogTrigger>
       <DialogContent maxWidth="800px">
         <DialogHeader>
-          <DialogTitle>Edit Worker - {worker.name}</DialogTitle>
+          <DialogTitle>Add New Worker</DialogTitle>
         </DialogHeader>
         <DialogBody>
           <form
-            id="edit-worker-form"
+            id="add-worker-form"
             onSubmit={handleSubmit(onSubmit)}
           >
             <Grid templateColumns="repeat(2, 1fr)" gap={4}>
@@ -259,15 +251,17 @@ export function EditWorker({ worker }: EditWorkerProps) {
             <Button variant="outline">Cancel</Button>
           </DialogCloseTrigger>
           <Button
-            form="edit-worker-form"
+            form="add-worker-form"
             type="submit"
             loading={isSubmitting}
             colorPalette="blue"
           >
-            Update Worker
+            Add Worker
           </Button>
         </DialogFooter>
       </DialogContent>
     </DialogRoot>
   )
 }
+
+export default AddWorker

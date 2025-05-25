@@ -1,20 +1,25 @@
-import React from "react"
-import { Flex, Heading, VStack, Box } from "@ark-ui/react"
-import { AddWorker } from "@/components/Workers/AddWorker"
-import { WorkerList } from "@/components/Workers/WorkerList"
+import { createFileRoute } from '@tanstack/react-router'
+import { Container, Flex, Heading, Stack } from '@chakra-ui/react'
+// Import named exports directly
+import { AddWorker } from '../../components/Workers/AddWorker.tsx'
+import { WorkerList } from '../../components/Workers/WorkerList.tsx'
 
-export default function WorkersPage() {
+function Workers() {
   return (
-    <Box p={4}>
-      <VStack spacing={4} align="stretch">
+    <Container maxW="full" py={8}>
+      <Stack gap={6}>
         <Flex justifyContent="space-between" alignItems="center">
-          <Heading as="h1" size="xl">
+          <Heading size="2xl" color="blue.600">
             Workers Management
           </Heading>
           <AddWorker />
         </Flex>
         <WorkerList />
-      </VStack>
-    </Box>
+      </Stack>
+    </Container>
   )
 }
+
+export const Route = createFileRoute('/_layout/workers')({
+  component: Workers,
+})

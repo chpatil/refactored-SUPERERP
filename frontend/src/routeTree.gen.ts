@@ -14,13 +14,18 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as SignupImport } from './routes/signup'
 import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RecoverPasswordImport } from './routes/recover-password'
+import { Route as QrLoginImport } from './routes/qr-login'
 import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
+import { Route as LayoutWorkersImport } from './routes/_layout/workers'
+import { Route as LayoutSupervisorDashboardImport } from './routes/_layout/supervisor-dashboard'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
+import { Route as LayoutReportsImport } from './routes/_layout/reports'
+import { Route as LayoutLeaveRequestsImport } from './routes/_layout/leave-requests'
 import { Route as LayoutItemsImport } from './routes/_layout/items'
+import { Route as LayoutAttendanceImport } from './routes/_layout/attendance'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
-import { Route as LayoutAdminImport } from './routes/_layout/workers'
 
 // Create/Update Routes
 
@@ -39,6 +44,11 @@ const RecoverPasswordRoute = RecoverPasswordImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const QrLoginRoute = QrLoginImport.update({
+  path: '/qr-login',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const LoginRoute = LoginImport.update({
   path: '/login',
   getParentRoute: () => rootRoute,
@@ -54,8 +64,28 @@ const LayoutIndexRoute = LayoutIndexImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutWorkersRoute = LayoutWorkersImport.update({
+  path: '/workers',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutSupervisorDashboardRoute = LayoutSupervisorDashboardImport.update({
+  path: '/supervisor-dashboard',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 const LayoutSettingsRoute = LayoutSettingsImport.update({
   path: '/settings',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutReportsRoute = LayoutReportsImport.update({
+  path: '/reports',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutLeaveRequestsRoute = LayoutLeaveRequestsImport.update({
+  path: '/leave-requests',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -64,8 +94,8 @@ const LayoutItemsRoute = LayoutItemsImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
-const LayoutAdminRoute = LayoutAdminImport.update({
-  path: '/admin',
+const LayoutAttendanceRoute = LayoutAttendanceImport.update({
+  path: '/attendance',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -86,6 +116,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
+    '/qr-login': {
+      preLoaderRoute: typeof QrLoginImport
+      parentRoute: typeof rootRoute
+    }
     '/recover-password': {
       preLoaderRoute: typeof RecoverPasswordImport
       parentRoute: typeof rootRoute
@@ -102,12 +136,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/attendance': {
+      preLoaderRoute: typeof LayoutAttendanceImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/items': {
       preLoaderRoute: typeof LayoutItemsImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/leave-requests': {
+      preLoaderRoute: typeof LayoutLeaveRequestsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/reports': {
+      preLoaderRoute: typeof LayoutReportsImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/settings': {
       preLoaderRoute: typeof LayoutSettingsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/supervisor-dashboard': {
+      preLoaderRoute: typeof LayoutSupervisorDashboardImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/workers': {
+      preLoaderRoute: typeof LayoutWorkersImport
       parentRoute: typeof LayoutImport
     }
     '/_layout/': {
@@ -122,11 +176,17 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren([
   LayoutRoute.addChildren([
     LayoutAdminRoute,
+    LayoutAttendanceRoute,
     LayoutItemsRoute,
+    LayoutLeaveRequestsRoute,
+    LayoutReportsRoute,
     LayoutSettingsRoute,
+    LayoutSupervisorDashboardRoute,
+    LayoutWorkersRoute,
     LayoutIndexRoute,
   ]),
   LoginRoute,
+  QrLoginRoute,
   RecoverPasswordRoute,
   ResetPasswordRoute,
   SignupRoute,

@@ -1,87 +1,124 @@
-import React from "react"
+// filepath: /Users/chinmaypatil/Documents/SuperERP/frontend/src/components/Workers/WorkerList.tsx
 import { useQuery } from "@tanstack/react-query"
-import { WorkersService } from "@/client/services.gen"
-import { showErrorToast } from "@/utils/toast"
-import { Table, Card, Badge, Text, Spinner, Center } from "@ark-ui/react"
+import { useState } from "react"
+import {
+  Box,
+  HStack,
+  Text,
+  Badge,
+  Grid,
+  Card,
+  Stack,
+  Skeleton,
+  IconButton,
+  Flex,
+  Input,
+} from "@chakra-ui/react"
+import { FaEdit, FaTrash, FaSearch, FaEye } from "react-icons/fa"
+
+import { type WorkerPublic, WorkersService } from "../../client"
+import { InputGroup } from "../ui/input-group"
 import { EditWorker } from "./EditWorker"
 import { DeleteWorker } from "./DeleteWorker"
 
-export function WorkerList() {
-  const {
-    data: workers,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["workers"],
-    queryFn: () => WorkersService.readWorkers(),
-  })
+interface WorkerCardProps {
+  worker: WorkerPublic
+}
 
-  React.useEffect(() => {
-    if (isError && error) {
-      showErrorToast(error.message || "Error loading workers")
-    }
-  }, [isError, error])
-
-  if (isLoading) {
-    return (
-      <Center h="200px">
-        <Spinner size="lg" />
-      </Center>
-    )
-  }
-
+const WorkerCard: React.FC<WorkerCardProps> = ({ worker }) => {
   return (
     <Card>
-      <Table variant="simple">
-        <Table.Header>
-          <Table.Row>
-            <Table.ColumnHeader>Name</Table.ColumnHeader>
-            <Table.ColumnHeader>Gender</Table.ColumnHeader>
-            <Table.ColumnHeader>Department</Table.ColumnHeader>
-            <Table.ColumnHeader>Aadhar</Table.ColumnHeader>
-            <Table.ColumnHeader>Bank Details</Table.ColumnHeader>
-            <Table.ColumnHeader>Actions</Table.ColumnHeader>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {workers?.data.map((worker) => (
-            <Table.Row key={worker.id}>
-              <Table.Cell>{worker.name}</Table.Cell>
-              <Table.Cell>{worker.gender || "N/A"}</Table.Cell>
-              <Table.Cell>{worker.department || "N/A"}</Table.Cell>
-              <Table.Cell>{worker.aadhar || "N/A"}</Table.Cell>
-              <Table.Cell>
-                {worker.bankname ? (
-                  <>
-                    {worker.bankname}
-                    {worker.accountno && (
-                      <Badge ml="2" colorScheme="gray">
-                        A/C: {worker.accountno.slice(-4)}
-                      </Badge>
-                    )}
-                  </>
-                ) : (
-                  "N/A"
-                )}
-              </Table.Cell>
-              <Table.Cell>
-                <EditWorker worker={worker} />
-                <DeleteWorker worker={worker} />
-              </Table.Cell>
-            </Table.Row>
-          ))}
-          {workers?.data.length === 0 && (
-            <Table.Row>
-              <Table.Cell colSpan={6}>
-                <Text align="center" py={4}>
-                  No workers found
-                </Text>
-              </Table.Cell>
-            </Table.Row>
+      <Card.Body>
+        <Stack gap={3}>
+          <HStack justify="space-between">
+            <Text fontWeight="bold" fontSize="lg">{worker.name}</Text>
+            {worker.gender && (
+              <Badge colorPalette={worker.gender === "Male" ? "blue" : "pink"} variant="subtle">
+                {worker.gender}
+              </Badge>
+            )}
+          </HStack>
+          
+          <Flex justify="space-between" align="center">
+            <Text fontSize="sm" fontFamily="mono" color="gray.500">
+              ID: {worker.id}
+            </Text>
+            <HStack>
+              <IconButton
+                aria-label="View worker details"
+                icon={<FaEye />}
+                size="sm"
+                variant="ghost"
+              />
+              <EditWorker worker={worker} />
+              <DeleteWorker workerId={worker.id} />
+            </HStack>
+          </Flex>
+          
+          {worker.department && (
+            <Text fontSize="sm" color="gray.600">
+              Department: {worker.department}
+            </Text>
           )}
-        </Table.Body>
-      </Table>
+        </Stack>
+      </Card.Body>
     </Card>
+  )
+}
+
+export function WorkerList() {
+  const [search, setSearch] = useState("")
+  
+  const { data: workers = [], isLoading } = useQuery({
+    queryKey: ["workers"],
+    queryFn: async () => {
+      const response = await WorkersService.listWorkers()
+      return response.workers
+    },
+  })
+  
+  const filteredWorkers = workers.filter((worker) => {
+    const searchLower = search.toLowerCase()
+    return (
+      !search ||
+      worker.name?.toLowerCase().includes(searchLower) ||
+      worker.department?.toLowerCase().includes(searchLower) ||
+      worker.id?.toLowerCase().includes(searchLower)
+    )
+  })
+
+  return (
+    <Box>
+      <InputGroup className="mb-4">
+        <InputGroup.LeftElement>
+          <FaSearch />
+        </InputGroup.LeftElement>
+        <Input
+          placeholder="Search workers..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </InputGroup>
+
+      {isLoading ? (
+        <Grid templateColumns="repeat(auto-fill, minmax(320px, 1fr))" gap={6}>
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} height="120px" borderRadius="md" />
+          ))}
+        </Grid>
+      ) : filteredWorkers.length > 0 ? (
+        <Grid templateColumns="repeat(auto-fill, minmax(320px, 1fr))" gap={6}>
+          {filteredWorkers.map((worker) => (
+            <WorkerCard key={worker.id} worker={worker} />
+          ))}
+        </Grid>
+      ) : (
+        <Box textAlign="center" p={8} bg="gray.50" borderRadius="md">
+          <Text color="gray.500">
+            {search ? "No workers match your search" : "No workers found"}
+          </Text>
+        </Box>
+      )}
+    </Box>
   )
 }

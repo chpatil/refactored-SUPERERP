@@ -1,38 +1,39 @@
-import React from "react"
+// filepath: /Users/chinmaypatil/Documents/SuperERP/frontend/src/components/Workers/DeleteWorker.tsx
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { showSuccessToast } from "@/utils/toast"
-import { handleError } from "@/utils/error"
-import { WorkersService } from "@/client/services.gen"
-import { WorkerPublic } from "@/client/types.gen"
-import { ApiError } from "@/client/core/ApiError"
+import { useState } from "react"
 import { FaTrash } from "react-icons/fa"
 
+import { Button, Text, IconButton } from "@chakra-ui/react"
+
+import { WorkersService } from "../../client"
+import type { ApiError } from "../../client/core/ApiError"
+import useCustomToast from "../../hooks/useCustomToast"
+import { handleError } from "../../utils"
 import {
-  Button,
-  DialogRoot,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
   DialogFooter,
-  DialogActionTrigger,
-  Text,
-} from "@ark-ui/react"
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog"
 
 interface DeleteWorkerProps {
-  worker: WorkerPublic
+  workerId: string
 }
 
-export function DeleteWorker({ worker }: DeleteWorkerProps) {
-  const [isOpen, setIsOpen] = React.useState(false)
+export function DeleteWorker({ workerId }: DeleteWorkerProps) {
   const queryClient = useQueryClient()
+  const { showSuccessToast } = useCustomToast()
+  const [open, setOpen] = useState(false)
 
-  const mutation = useMutation({
-    mutationFn: () => WorkersService.deleteWorker({ id: worker.id }),
+  const deleteWorker = useMutation({
+    mutationFn: () => WorkersService.deleteWorker({ id: workerId }),
     onSuccess: () => {
       showSuccessToast("Worker deleted successfully.")
-      setIsOpen(false)
+      setOpen(false)
     },
     onError: (err: ApiError) => {
       handleError(err)
@@ -42,22 +43,17 @@ export function DeleteWorker({ worker }: DeleteWorkerProps) {
     },
   })
 
-  const handleDelete = () => {
-    mutation.mutate()
-  }
-
   return (
-    <DialogRoot
-      size={{ base: "xs", md: "md" }}
-      placement="center"
-      open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
-    >
+    <DialogRoot open={open} onOpenChange={(e) => setOpen(e.open)}>
       <DialogTrigger asChild>
-        <Button variant="ghost" colorPalette="red">
-          <FaTrash fontSize="16px" />
-          Delete Worker
-        </Button>
+        <IconButton
+          aria-label="Delete worker"
+          size="sm"
+          variant="ghost"
+          colorPalette="red"
+        >
+          <FaTrash />
+        </IconButton>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -65,20 +61,18 @@ export function DeleteWorker({ worker }: DeleteWorkerProps) {
         </DialogHeader>
         <DialogBody>
           <Text>
-            Are you sure you want to delete worker "{worker.name}"? This action cannot be
-            undone.
+            Are you sure you want to delete this worker? This action
+            cannot be undone.
           </Text>
         </DialogBody>
-        <DialogFooter gap={2}>
-          <DialogActionTrigger asChild>
-            <Button variant="subtle" colorPalette="gray">
-              Cancel
-            </Button>
-          </DialogActionTrigger>
+        <DialogFooter>
+          <DialogCloseTrigger asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogCloseTrigger>
           <Button
             colorPalette="red"
-            onClick={handleDelete}
-            loading={mutation.isPending}
+            onClick={() => deleteWorker.mutate()}
+            loading={deleteWorker.isPending}
           >
             Delete
           </Button>

@@ -5,24 +5,11 @@ import {
   Container,
   Flex,
   Heading,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
   Text,
-  useColorModeValue,
   HStack,
   VStack,
-  Card,
-  CardBody,
-  StatGroup,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
+  Grid,
+  GridItem,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -30,14 +17,12 @@ import { useEffect } from "react"
 
 import { type ApiError, AttendanceService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
-import useAuth from "../../hooks/useAuth"
 
 export const Route = createFileRoute("/_layout/attendance")({
   component: Attendance,
 })
 
 function Attendance() {
-  const { user } = useAuth()
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
 
@@ -75,13 +60,13 @@ function Attendance() {
         },
       }),
     onSuccess: () => {
-      showToast("Success!", "Checked in successfully.", "success")
+      showToast.showSuccessToast("Checked in successfully.")
       queryClient.invalidateQueries({ queryKey: ["attendance"] })
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] })
     },
     onError: (err: ApiError) => {
-      const errDetail = err.body?.detail
-      showToast("Error", `${errDetail}`, "error")
+      const errDetail = (err.body as any)?.detail
+      showToast.showErrorToast(`${errDetail}`)
     },
   })
 
@@ -89,20 +74,20 @@ function Attendance() {
     mutationFn: (attendanceId: string) =>
       AttendanceService.checkOut({ id: attendanceId }),
     onSuccess: () => {
-      showToast("Success!", "Checked out successfully.", "success")
+      showToast.showSuccessToast("Checked out successfully.")
       queryClient.invalidateQueries({ queryKey: ["attendance"] })
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] })
     },
     onError: (err: ApiError) => {
-      const errDetail = err.body?.detail
-      showToast("Error", `${errDetail}`, "error")
+      const errDetail = (err.body as any)?.detail
+      showToast.showErrorToast(`${errDetail}`)
     },
   })
 
   useEffect(() => {
     if (isError) {
-      const errDetail = (error as ApiError).body?.detail
-      showToast("Something went wrong.", `${errDetail}`, "error")
+      const errDetail = ((error as ApiError).body as any)?.detail
+      showToast.showErrorToast(`${errDetail}`)
     }
   }, [isError, error, showToast])
 
@@ -110,7 +95,7 @@ function Attendance() {
   const isCheckedIn = !!todayRecord
   const isCheckedOut = todayRecord?.check_out
 
-  const calculateHours = (checkIn: string, checkOut?: string) => {
+  const calculateHours = (checkIn: string, checkOut?: string | null) => {
     if (!checkOut) return "In Progress"
     const start = new Date(checkIn)
     const end = new Date(checkOut)
@@ -120,9 +105,9 @@ function Attendance() {
 
   const getStatusBadge = (record: any) => {
     if (!record.check_out) {
-      return <Badge colorScheme="green">Active</Badge>
+      return <Badge colorPalette="green">Active</Badge>
     }
-    return <Badge colorScheme="blue">Completed</Badge>
+    return <Badge colorPalette="blue">Completed</Badge>
   }
 
   return (
@@ -132,52 +117,50 @@ function Attendance() {
       </Heading>
 
       {/* Quick Actions Card */}
-      <Card mt={6} mb={6}>
-        <CardBody>
-          <VStack spacing={4}>
-            <Heading size="md">Today's Attendance</Heading>
-            
-            {todayPending ? (
-              <Text>Loading...</Text>
-            ) : (
-              <HStack spacing={4}>
-                {!isCheckedIn ? (
+      <Box mt={6} mb={6} p={6} borderWidth={1} borderRadius="md" bg="bg.surface">
+        <VStack gap={4}>
+          <Heading size="md">Today's Attendance</Heading>
+          
+          {todayPending ? (
+            <Text>Loading...</Text>
+          ) : (
+            <HStack gap={4}>
+              {!isCheckedIn ? (
+                <Button
+                  colorPalette="green"
+                  size="lg"
+                  onClick={() => checkInMutation.mutate()}
+                  loading={checkInMutation.isPending}
+                >
+                  Check In
+                </Button>
+              ) : !isCheckedOut ? (
+                <VStack gap={2}>
+                  <Text color="green.500" fontWeight="bold">
+                    Checked in at {new Date(todayRecord.check_in).toLocaleTimeString()}
+                  </Text>
                   <Button
-                    colorScheme="green"
-                    size="lg"
-                    onClick={() => checkInMutation.mutate()}
-                    isLoading={checkInMutation.isPending}
+                    colorPalette="red"
+                    onClick={() => checkOutMutation.mutate(todayRecord.id)}
+                    loading={checkOutMutation.isPending}
                   >
-                    Check In
+                    Check Out
                   </Button>
-                ) : !isCheckedOut ? (
-                  <VStack spacing={2}>
-                    <Text color="green.500" fontWeight="bold">
-                      Checked in at {new Date(todayRecord.check_in).toLocaleTimeString()}
-                    </Text>
-                    <Button
-                      colorScheme="red"
-                      onClick={() => checkOutMutation.mutate(todayRecord.id)}
-                      isLoading={checkOutMutation.isPending}
-                    >
-                      Check Out
-                    </Button>
-                  </VStack>
-                ) : (
-                  <VStack spacing={2}>
-                    <Text color="blue.500" fontWeight="bold">
-                      Completed for today
-                    </Text>
-                    <Text fontSize="sm">
-                      {calculateHours(todayRecord.check_in, todayRecord.check_out)}
-                    </Text>
-                  </VStack>
-                )}
-              </HStack>
-            )}
-          </VStack>
-        </CardBody>
-      </Card>
+                </VStack>
+              ) : (
+                <VStack gap={2}>
+                  <Text color="blue.500" fontWeight="bold">
+                    Completed for today
+                  </Text>
+                  <Text fontSize="sm">
+                    {calculateHours(todayRecord.check_in, todayRecord.check_out)}
+                  </Text>
+                </VStack>
+              )}
+            </HStack>
+          )}
+        </VStack>
+      </Box>
 
       {/* Attendance History */}
       <Box>
@@ -190,44 +173,64 @@ function Attendance() {
             <Text>Loading...</Text>
           </Flex>
         ) : (
-          <TableContainer>
-            <Table size={{ base: "sm", md: "md" }}>
-              <Thead>
-                <Tr>
-                  <Th>Date</Th>
-                  <Th>Check In</Th>
-                  <Th>Check Out</Th>
-                  <Th>Duration</Th>
-                  <Th>Location</Th>
-                  <Th>Status</Th>
-                  <Th>Notes</Th>
-                </Tr>
-              </Thead>
-              {attendanceRecords?.data && (
-                <Tbody>
-                  {attendanceRecords.data.map((record) => (
-                    <Tr key={record.id}>
-                      <Td>{new Date(record.date).toLocaleDateString()}</Td>
-                      <Td>{new Date(record.check_in).toLocaleTimeString()}</Td>
-                      <Td>
-                        {record.check_out
-                          ? new Date(record.check_out).toLocaleTimeString()
-                          : "-"}
-                      </Td>
-                      <Td>{calculateHours(record.check_in, record.check_out)}</Td>
-                      <Td>{record.location || "-"}</Td>
-                      <Td>{getStatusBadge(record)}</Td>
-                      <Td>
-                        <Text isTruncated maxW="200px">
-                          {record.notes || "-"}
-                        </Text>
-                      </Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              )}
-            </Table>
-          </TableContainer>
+          <Box>
+            {/* Table Header */}
+            <Grid templateColumns="repeat(7, 1fr)" gap={2} p={3} bg="bg.muted" borderRadius="md" mb={2}>
+              <GridItem>
+                <Text fontWeight="bold">Date</Text>
+              </GridItem>
+              <GridItem>
+                <Text fontWeight="bold">Check In</Text>
+              </GridItem>
+              <GridItem>
+                <Text fontWeight="bold">Check Out</Text>
+              </GridItem>
+              <GridItem>
+                <Text fontWeight="bold">Duration</Text>
+              </GridItem>
+              <GridItem>
+                <Text fontWeight="bold">Location</Text>
+              </GridItem>
+              <GridItem>
+                <Text fontWeight="bold">Status</Text>
+              </GridItem>
+              <GridItem>
+                <Text fontWeight="bold">Notes</Text>
+              </GridItem>
+            </Grid>
+            {/* Table Body */}
+            {attendanceRecords?.data && attendanceRecords.data.map((record) => (
+              <Grid templateColumns="repeat(7, 1fr)" gap={2} p={3} borderWidth={1} borderRadius="md" mb={2} key={record.id}>
+                <GridItem>
+                  <Text>{new Date(record.date).toLocaleDateString()}</Text>
+                </GridItem>
+                <GridItem>
+                  <Text>{new Date(record.check_in).toLocaleTimeString()}</Text>
+                </GridItem>
+                <GridItem>
+                  <Text>
+                    {record.check_out
+                      ? new Date(record.check_out).toLocaleTimeString()
+                      : "-"}
+                  </Text>
+                </GridItem>
+                <GridItem>
+                  <Text>{calculateHours(record.check_in, record.check_out)}</Text>
+                </GridItem>
+                <GridItem>
+                  <Text>{record.location || "-"}</Text>
+                </GridItem>
+                <GridItem>
+                  {getStatusBadge(record)}
+                </GridItem>
+                <GridItem>
+                  <Text truncate maxW="200px">
+                    {record.notes || "-"}
+                  </Text>
+                </GridItem>
+              </Grid>
+            ))}
+          </Box>
         )}
       </Box>
     </Container>

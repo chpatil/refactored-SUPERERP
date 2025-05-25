@@ -1,16 +1,14 @@
 import {
   Button,
-  FormControl,
-  FormErrorMessage,
-  FormLabel,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Select,
+  DialogBackdrop,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  Input,
   Textarea,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -23,6 +21,7 @@ import {
   LeaveRequestsService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
+import { Field } from "../ui/field"
 
 interface EditLeaveRequestProps {
   leaveRequest: LeaveRequestPublic
@@ -58,12 +57,12 @@ const EditLeaveRequest = ({
         requestBody: data,
       }),
     onSuccess: () => {
-      showToast("Success!", "Leave request updated successfully.", "success")
+      showToast.showSuccessToast("Leave request updated successfully.")
       onClose()
     },
     onError: (err: ApiError) => {
-      const errDetail = err.body?.detail
-      showToast("Something went wrong.", `${errDetail}`, "error")
+      const errDetail = (err.body as any)?.detail
+      showToast.showErrorToast(`${errDetail}`)
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
@@ -80,57 +79,54 @@ const EditLeaveRequest = ({
   }
 
   return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size={{ base: "sm", md: "md" }}
-        isCentered
-      >
-        <ModalOverlay />
-        <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
-          <ModalHeader>Review Leave Request</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <FormControl>
-              <FormLabel>Employee</FormLabel>
+    <DialogRoot open={isOpen} onOpenChange={(e) => e.open || onClose()}>
+      <DialogBackdrop />
+      <DialogContent asChild>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <DialogHeader>
+            <DialogTitle>Review Leave Request</DialogTitle>
+            <DialogCloseTrigger />
+          </DialogHeader>
+          <DialogBody>
+            <Field label="Employee">
               <p>{leaveRequest.employee_id}</p>
-            </FormControl>
-            <FormControl mt={4}>
-              <FormLabel>Leave Type</FormLabel>
+            </Field>
+            <Field label="Leave Type">
               <p>{leaveRequest.leave_type}</p>
-            </FormControl>
-            <FormControl mt={4}>
-              <FormLabel>Duration</FormLabel>
+            </Field>
+            <Field label="Duration">
               <p>
                 {new Date(leaveRequest.start_date).toLocaleDateString()} -{" "}
                 {new Date(leaveRequest.end_date).toLocaleDateString()}
               </p>
-            </FormControl>
-            <FormControl mt={4}>
-              <FormLabel>Reason</FormLabel>
+            </Field>
+            <Field label="Reason">
               <p>{leaveRequest.reason}</p>
-            </FormControl>
-            <FormControl mt={4} isRequired isInvalid={!!errors.status}>
-              <FormLabel htmlFor="status">Status</FormLabel>
-              <Select
+            </Field>
+            <Field
+              required
+              invalid={!!errors.status}
+              errorText={errors.status?.message}
+              label="Status"
+            >
+              <Input
                 id="status"
                 {...register("status", {
                   required: "Status is required",
                 })}
-              >
+                list="status-options"
+              />
+              <datalist id="status-options">
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
-              </Select>
-              {errors.status && (
-                <FormErrorMessage>{errors.status.message}</FormErrorMessage>
-              )}
-            </FormControl>
-            <FormControl mt={4} isInvalid={!!errors.supervisor_comments}>
-              <FormLabel htmlFor="supervisor_comments">
-                Supervisor Comments
-              </FormLabel>
+              </datalist>
+            </Field>
+            <Field
+              invalid={!!errors.supervisor_comments}
+              errorText={errors.supervisor_comments?.message}
+              label="Supervisor Comments"
+            >
               <Textarea
                 id="supervisor_comments"
                 {...register("supervisor_comments", {
@@ -141,22 +137,17 @@ const EditLeaveRequest = ({
                 })}
                 placeholder="Optional comments about the decision"
               />
-              {errors.supervisor_comments && (
-                <FormErrorMessage>
-                  {errors.supervisor_comments.message}
-                </FormErrorMessage>
-              )}
-            </FormControl>
-          </ModalBody>
-          <ModalFooter gap={3}>
-            <Button variant="primary" type="submit" isLoading={isSubmitting}>
+            </Field>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="solid" type="submit" loading={isSubmitting}>
               Update
             </Button>
             <Button onClick={onCancel}>Cancel</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </DialogRoot>
   )
 }
 

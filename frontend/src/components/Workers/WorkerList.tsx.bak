@@ -1,0 +1,206 @@
+import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
+import {
+  Box,
+  HStack,
+  Text,
+  Badge,
+  Grid,
+  Card,
+  Stack,
+  Skeleton,
+  IconButton,
+  Flex,
+  Input,
+} from "@chakra-ui/react"
+import { FaEdit, FaTrash, FaSearch, FaEye } from "react-icons/fa"
+
+import { type WorkerPublic, WorkersService } from "../../client"
+import { InputGroup } from "../ui/input-group"
+import EditWorker from "./EditWorker"
+import DeleteWorker from "./DeleteWorker"
+
+function WorkerList() {
+  const [searchTerm, setSearchTerm] = useState("")
+  
+  const { data, isLoading } = useQuery({
+    queryKey: ["workers"],
+    queryFn: () => WorkersService.getWorkers(),
+  })
+
+  // Filter workers based on search term
+  const filteredWorkers = data?.filter((worker) => {
+    if (!searchTerm) return true
+    
+    const searchValue = searchTerm.toLowerCase()
+    return (
+      worker.name?.toLowerCase().includes(searchValue) ||
+      worker.department?.toLowerCase().includes(searchValue) ||
+      worker.address?.toLowerCase().includes(searchValue)
+    )
+  })
+
+  const getDepartmentColor = (department?: string) => {
+    if (!department) return "gray"
+    
+    const deptMap: Record<string, string> = {
+      Engineering: "blue",
+      Marketing: "green",
+      Sales: "purple",
+      HR: "orange",
+      Finance: "cyan",
+      Operations: "yellow",
+      Production: "pink",
+      Maintenance: "teal",
+    }
+    
+    return deptMap[department] || "gray"
+  }
+
+  // Display loading skeletons
+  if (isLoading) {
+    return (
+      <Stack spacing={4}>
+        <Flex>
+          <InputGroup>
+            <Input
+              placeholder="Search workers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              isDisabled
+            />
+            <IconButton 
+              aria-label="Search"
+              icon={<FaSearch />} 
+              isDisabled
+            />
+          </InputGroup>
+        </Flex>
+        
+        <Grid 
+          templateColumns={{
+            base: "1fr",
+            md: "repeat(2, 1fr)",
+            lg: "repeat(3, 1fr)",
+          }}
+          gap={4}
+        >
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} p={4}>
+              <Stack spacing={2}>
+                <Skeleton height="24px" width="70%" />
+                <Skeleton height="20px" width="40%" />
+                <Skeleton height="20px" width="90%" />
+                <Flex justify="space-between">
+                  <Skeleton height="32px" width="80px" />
+                  <HStack>
+                    <Skeleton height="32px" width="32px" borderRadius="md" />
+                    <Skeleton height="32px" width="32px" borderRadius="md" />
+                    <Skeleton height="32px" width="32px" borderRadius="md" />
+                  </HStack>
+                </Flex>
+              </Stack>
+            </Card>
+          ))}
+        </Grid>
+      </Stack>
+    )
+  }
+
+  return (
+    <Stack spacing={4}>
+      <Flex>
+        <InputGroup>
+          <Input
+            placeholder="Search by name, department..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            borderRightRadius={0}
+          />
+          <IconButton 
+            aria-label="Search" 
+            icon={<FaSearch />}
+            borderLeftRadius={0}
+          />
+        </InputGroup>
+      </Flex>
+      
+      {!filteredWorkers?.length && (
+        <Box textAlign="center" py={10}>
+          <Text fontSize="xl" color="gray.500">
+            {data?.length ? "No workers match your search" : "No workers found. Add your first worker!"}
+          </Text>
+        </Box>
+      )}
+      
+      <Grid 
+        templateColumns={{
+          base: "1fr",
+          md: "repeat(2, 1fr)",
+          lg: "repeat(3, 1fr)",
+        }}
+        gap={4}
+      >
+        {filteredWorkers?.map((worker) => (
+          <Card 
+            key={worker.id} 
+            p={4} 
+            transition="transform 0.2s, box-shadow 0.2s" 
+            _hover={{ 
+              transform: "translateY(-2px)",
+              boxShadow: "xl"
+            }}
+          >
+            <Stack spacing={2}>
+              <HStack justify="space-between">
+                <Text fontWeight="bold" fontSize="lg">{worker.name || "Unnamed Worker"}</Text>
+                <Badge 
+                  colorPalette={getDepartmentColor(worker.department)} 
+                  variant="outline"
+                >
+                  {worker.department || "Unassigned"}
+                </Badge>
+              </HStack>
+              
+              <Text fontSize="sm" color="gray.600">
+                ID: {worker.id}
+              </Text>
+              
+              {worker.address && (
+                <Text fontSize="sm" color="gray.600" noOfLines={2}>
+                  {worker.address}
+                </Text>
+              )}
+              
+              <Flex justify="space-between" align="center" mt={2}>
+                <Box>
+                  {worker.gender && (
+                    <Badge colorPalette="blue" variant="subtle">
+                      {worker.gender}
+                    </Badge>
+                  )}
+                </Box>
+                
+                <HStack spacing={2}>
+                  <IconButton
+                    aria-label="View worker details"
+                    icon={<FaEye />}
+                    size="sm"
+                    variant="ghost"
+                    colorPalette="blue"
+                  />
+                  
+                  <EditWorker worker={worker} />
+                  
+                  <DeleteWorker workerId={worker.id} />
+                </HStack>
+              </Flex>
+            </Stack>
+          </Card>
+        ))}
+      </Grid>
+    </Stack>
+  )
+}
+
+export default WorkerList

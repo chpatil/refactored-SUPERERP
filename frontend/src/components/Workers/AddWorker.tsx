@@ -1,38 +1,43 @@
-import React from "react"
-import { useForm, SubmitHandler } from "react-hook-form"
+// filepath: /Users/chinmaypatil/Documents/SuperERP/frontend/src/components/Workers/AddWorker.tsx
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { showSuccessToast } from "@/utils/toast"
-import { handleError } from "@/utils/error"
-import { WorkersService } from "@/client/services.gen"
-import { WorkerCreate } from "@/client/types.gen"
-import { ApiError } from "@/client/core/ApiError"
+import { type SubmitHandler, useForm } from "react-hook-form"
+import { useState } from "react"
 import { FaPlus } from "react-icons/fa"
 
 import {
   Button,
-  DialogRoot,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogActionTrigger,
   Input,
-  Text,
-  VStack,
-  Field,
-} from "@ark-ui/react"
+  Grid,
+  GridItem,
+} from "@chakra-ui/react"
 
+import { type WorkerCreate, WorkersService } from "../../client"
+import type { ApiError } from "../../client/core/ApiError"
+import useCustomToast from "../../hooks/useCustomToast"
+import { handleError } from "../../utils"
+import {
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog"
+import { Field } from "../ui/field"
+
+// Export the function directly as a named export
 export function AddWorker() {
-  const [isOpen, setIsOpen] = React.useState(false)
   const queryClient = useQueryClient()
-
+  const { showSuccessToast } = useCustomToast()
+  const [open, setOpen] = useState(false)
+  
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isValid, isSubmitting },
+    formState: { errors, isSubmitting },
   } = useForm<WorkerCreate>({
     mode: "onBlur",
     criteriaMode: "all",
@@ -56,7 +61,7 @@ export function AddWorker() {
     onSuccess: () => {
       showSuccessToast("Worker created successfully.")
       reset()
-      setIsOpen(false)
+      setOpen(false)
     },
     onError: (err: ApiError) => {
       handleError(err)
@@ -71,175 +76,191 @@ export function AddWorker() {
   }
 
   return (
-    <DialogRoot
-      size={{ base: "xs", md: "md" }}
-      placement="center"
-      open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
-    >
+    <DialogRoot open={open} onOpenChange={(e) => setOpen(e.open)}>
       <DialogTrigger asChild>
-        <Button value="add-worker" my={4}>
-          <FaPlus fontSize="16px" />
+        <Button
+          variant="solid"
+          colorPalette="blue"
+          size="sm"
+        >
+          <FaPlus />
           Add Worker
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogHeader>
-            <DialogTitle>Add Worker</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <Text mb={4}>Fill in the details to add a new worker.</Text>
-            <VStack gap={4}>
-              <Field
-                required
-                invalid={!!errors.name}
-                errorText={errors.name?.message}
-                label="Name"
-              >
-                <Input
-                  id="name"
-                  {...register("name", {
-                    required: "Name is required.",
-                  })}
-                  placeholder="Name"
-                  type="text"
-                />
-              </Field>
-
-              <Field
-                invalid={!!errors.gender}
-                errorText={errors.gender?.message}
-                label="Gender"
-              >
-                <Input
-                  id="gender"
-                  {...register("gender")}
-                  placeholder="Gender"
-                  type="text"
-                />
-              </Field>
+      <DialogContent maxWidth="800px">
+        <DialogHeader>
+          <DialogTitle>Add New Worker</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          <form
+            id="add-worker-form"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+              <GridItem>
+                <Field
+                  label="Full Name"
+                  invalid={!!errors.name}
+                  errorText={errors.name?.message}
+                  required
+                >
+                  <Input
+                    {...register("name", {
+                      required: "Name is required.",
+                      minLength: {
+                        value: 2,
+                        message: "Name must be at least 2 characters."
+                      }
+                    })}
+                    placeholder="Enter full name"
+                  />
+                </Field>
+              </GridItem>
               
-              <Field
-                invalid={!!errors.department}
-                errorText={errors.department?.message}
-                label="Department"
-              >
-                <Input
-                  id="department"
-                  {...register("department")}
-                  placeholder="Department"
-                  type="text"
-                />
-              </Field>
+              <GridItem>
+                <Field
+                  label="Gender"
+                  invalid={!!errors.gender}
+                  errorText={errors.gender?.message}
+                >
+                  <Input
+                    {...register("gender")}
+                    placeholder="Enter gender"
+                  />
+                </Field>
+              </GridItem>
               
-              <Field
-                invalid={!!errors.address}
-                errorText={errors.address?.message}
-                label="Address"
-              >
-                <Input
-                  id="address"
-                  {...register("address")}
-                  placeholder="Address"
-                  type="text"
-                />
-              </Field>
+              <GridItem>
+                <Field
+                  label="Department"
+                  invalid={!!errors.department}
+                  errorText={errors.department?.message}
+                >
+                  <Input
+                    {...register("department")}
+                    placeholder="Enter department"
+                  />
+                </Field>
+              </GridItem>
               
-              <Field
-                invalid={!!errors.aadhar}
-                errorText={errors.aadhar?.message}
-                label="Aadhar"
-              >
-                <Input
-                  id="aadhar"
-                  {...register("aadhar")}
-                  placeholder="Aadhar Number"
-                  type="text"
-                />
-              </Field>
+              <GridItem>
+                <Field
+                  label="Aadhar Number"
+                  invalid={!!errors.aadhar}
+                  errorText={errors.aadhar?.message}
+                >
+                  <Input
+                    {...register("aadhar", {
+                      pattern: {
+                        value: /^\d{12}$/,
+                        message: "Aadhar must be 12 digits"
+                      }
+                    })}
+                    placeholder="Enter 12-digit Aadhar number"
+                    maxLength={12}
+                  />
+                </Field>
+              </GridItem>
               
-              <Field
-                invalid={!!errors.bankname}
-                errorText={errors.bankname?.message}
-                label="Bank Name"
-              >
-                <Input
-                  id="bankname"
-                  {...register("bankname")}
-                  placeholder="Bank Name"
-                  type="text"
-                />
-              </Field>
+              <GridItem colSpan={2}>
+                <Field
+                  label="Address"
+                  invalid={!!errors.address}
+                  errorText={errors.address?.message}
+                >
+                  <Input
+                    {...register("address")}
+                    placeholder="Enter complete address"
+                  />
+                </Field>
+              </GridItem>
               
-              <Field
-                invalid={!!errors.ifscode}
-                errorText={errors.ifscode?.message}
-                label="IFSC Code"
-              >
-                <Input
-                  id="ifscode"
-                  {...register("ifscode")}
-                  placeholder="IFSC Code"
-                  type="text"
-                />
-              </Field>
+              <GridItem>
+                <Field
+                  label="Bank Name"
+                  invalid={!!errors.bankname}
+                  errorText={errors.bankname?.message}
+                >
+                  <Input
+                    {...register("bankname")}
+                    placeholder="Enter bank name"
+                  />
+                </Field>
+              </GridItem>
               
-              <Field
-                invalid={!!errors.accountno}
-                errorText={errors.accountno?.message}
-                label="Account Number"
-              >
-                <Input
-                  id="accountno"
-                  {...register("accountno")}
-                  placeholder="Account Number"
-                  type="text"
-                />
-              </Field>
+              <GridItem>
+                <Field
+                  label="IFSC Code"
+                  invalid={!!errors.ifscode}
+                  errorText={errors.ifscode?.message}
+                >
+                  <Input
+                    {...register("ifscode", {
+                      pattern: {
+                        value: /^[A-Z]{4}0[A-Z0-9]{6}$/,
+                        message: "Invalid IFSC code format"
+                      }
+                    })}
+                    placeholder="Enter IFSC code"
+                    style={{ textTransform: "uppercase" }}
+                  />
+                </Field>
+              </GridItem>
               
-              <Field
-                invalid={!!errors.pfno}
-                errorText={errors.pfno?.message}
-                label="PF Number"
-              >
-                <Input
-                  id="pfno"
-                  {...register("pfno")}
-                  placeholder="PF Number"
-                  type="text"
-                />
-              </Field>
+              <GridItem>
+                <Field
+                  label="Account Number"
+                  invalid={!!errors.accountno}
+                  errorText={errors.accountno?.message}
+                >
+                  <Input
+                    {...register("accountno")}
+                    placeholder="Enter account number"
+                  />
+                </Field>
+              </GridItem>
               
-              <Field
-                invalid={!!errors.esicno}
-                errorText={errors.esicno?.message}
-                label="ESIC Number"
-              >
-                <Input
-                  id="esicno"
-                  {...register("esicno")}
-                  placeholder="ESIC Number"
-                  type="text"
-                />
-              </Field>
-            </VStack>
-          </DialogBody>
-          <DialogFooter gap={2}>
-            <DialogActionTrigger asChild>
-              <Button variant="subtle" colorPalette="gray">
-                Cancel
-              </Button>
-            </DialogActionTrigger>
-            <Button
-              type="submit"
-              disabled={!isValid || isSubmitting}
-              loading={isSubmitting}
-            >
-              Add
-            </Button>
-          </DialogFooter>
-        </form>
+              <GridItem>
+                <Field
+                  label="PF Number"
+                  invalid={!!errors.pfno}
+                  errorText={errors.pfno?.message}
+                >
+                  <Input
+                    {...register("pfno")}
+                    placeholder="Enter PF number"
+                  />
+                </Field>
+              </GridItem>
+              
+              <GridItem>
+                <Field
+                  label="ESIC Number"
+                  invalid={!!errors.esicno}
+                  errorText={errors.esicno?.message}
+                >
+                  <Input
+                    {...register("esicno")}
+                    placeholder="Enter ESIC number"
+                  />
+                </Field>
+              </GridItem>
+            </Grid>
+          </form>
+        </DialogBody>
+        <DialogFooter>
+          <DialogCloseTrigger asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogCloseTrigger>
+          <Button
+            form="add-worker-form"
+            type="submit"
+            loading={isSubmitting}
+            colorPalette="blue"
+          >
+            Add Worker
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </DialogRoot>
   )
