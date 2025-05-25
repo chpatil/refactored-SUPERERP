@@ -20,6 +20,7 @@ import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutItemsImport } from './routes/_layout/items'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
+import { Route as LayoutAdminImport } from './routes/_layout/workers'
 
 // Create/Update Routes
 
@@ -60,6 +61,11 @@ const LayoutSettingsRoute = LayoutSettingsImport.update({
 
 const LayoutItemsRoute = LayoutItemsImport.update({
   path: '/items',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutAdminRoute = LayoutAdminImport.update({
+  path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
 
